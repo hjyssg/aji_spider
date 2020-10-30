@@ -11,6 +11,8 @@ const screenshotPath = "./screenshots";
 let browser;
 const visited = {};
 let secPage;
+let page;
+
 
 
 async function handleSingleAuthorPage(subUrl){
@@ -47,7 +49,6 @@ async function handleSingleAuthorPage(subUrl){
 }
 
 async function searchOne(author){
-    const page = await browser.newPage();
 
     //搜索作者
     const url = "https://www.doujinshi.org/search/simple/?T=author&sn=" + author;
@@ -81,7 +82,23 @@ async function main(){
   //   throw mkerr;
   // }
 
-  secPage = await browser.newPage()
+  const noImg = (request) => {
+      if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
+          request.abort();
+      } else {
+          request.continue();
+      }
+  }
+
+  //https://github.com/puppeteer/puppeteer/issues/1913 
+  //do not load image/stylesheet
+  page = await browser.newPage();
+  await page.setRequestInterception(true);
+  page.on('request', noImg);
+
+  secPage = await browser.newPage();
+  await secPage.setRequestInterception(true);
+  secPage.on('request', noImg);
 
   for(let ii = 0; ii < author_list.length; ii++){
     const author = author_list[ii];

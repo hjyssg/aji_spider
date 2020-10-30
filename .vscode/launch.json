@@ -11,7 +11,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\twitter.js"
+            "program": "${workspaceFolder}\\doujinshi_org.js"
         }
     ]
 }

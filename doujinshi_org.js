@@ -10,22 +10,22 @@ const path = require('path');
 const screenshotPath = "./screenshots";
 let browser;
 const visited = {};
+let secPage;
+
 
 async function handleSingleAuthorPage(subUrl){
-
   if(visited[subUrl]){
-    continue;
+    return;
   }
 
-  const secPage = await browser.newPage();
   await secPage.goto(subUrl);
-  const pageButton =secPage.$$(".header .pagination a");
+  let pageButton = await secPage.$$(".header .pagination a");
 
-  for(let ii = 1; ii <= pageButton.length; ii++){
-    if(ii > 1){
-      // await secPage.goto(subUrl);
+  for(let ii = 0; ii < pageButton.length; ii++){
+    if(ii > 0){
       await pageButton[ii].click()
-      await secPage.waitForNavigation()
+      await secPage.waitForNavigation();
+      pageButton = await secPage.$$(".header .pagination a");
     }
 
     visited[subUrl] = true;
@@ -44,11 +44,6 @@ async function handleSingleAuthorPage(subUrl){
     console.log(bookinfo);
     // const title = await secPage.title();
   }
-
-
-
-
-  await secPage.close();
 }
 
 async function searchOne(author){
@@ -86,6 +81,7 @@ async function main(){
   //   throw mkerr;
   // }
 
+  secPage = await browser.newPage()
 
   for(let ii = 0; ii < author_list.length; ii++){
     const author = author_list[ii];
@@ -96,6 +92,8 @@ async function main(){
 
 try{
   main();
+
+  console.log("done");
 }catch(e){
   debugger
   console.error(e)

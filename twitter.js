@@ -58,11 +58,18 @@ async function main(){
       throw mkerr;
     }
 
+    //有bug就是说明明没有指定firefox
+    //但却硬要用firefox
+    //node_modules整个删除才行
+
     // That's it, the rest is puppeteer usage as normal 😊
     const browser = await puppeteer.launch({ headless: false,
+      // product: "chrome",
       args: [
         '--proxy-server=socks5://localhost:10808',
     ]});
+
+    // const browser = await puppeteer.launch({ headless: false});
 
     // const page = await browser.newPage();
     // login(page);

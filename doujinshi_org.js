@@ -13,6 +13,9 @@ const visited = {};
 let secPage;
 let page;
 
+const bookInfoDb = require("./bookInfoDb");
+let db_path = "book_info";
+bookInfoDb.init(db_path);
 
 
 async function handleSingleAuthorPage(subUrl){
@@ -40,12 +43,73 @@ async function handleSingleAuthorPage(subUrl){
     })
   
     bookinfo = bookinfo.map(singleInfo => {
-      return singleInfo.split("\n").map(e => e.trim()).join("\n");
+      return parseBookinfo(singleInfo);
     })
+
+    bookinfo = bookinfo.filter(e => e.Type !== "Commercial Magazine");
   
-    console.log(bookinfo);
+    // console.log(bookinfo);
     // const title = await secPage.title();
+
+    bookInfoDb.insert(bookinfo);
   }
+}
+
+function parseBookinfo(singleInfo){
+  const obj = {};
+  let lines = singleInfo.split("\n").map(e => e.trim()).filter(e => e.length > 0);
+  let currentKey;
+
+  const allowKeys = [
+    "Romanized:",
+    "Original:",
+    "Circle:",
+    "Author:",
+    "Parodies:",
+    "Type:",
+    "Pages:",
+    "Adult:",
+    "Score:",
+    "Date:",
+    "Modified:",
+  ];
+
+  // 0:"Romanized:"
+  // 1:"Original:"
+  // 2:"if idol diary ~ことりサンタの贈りもの~"
+  // 3:"Circle:"
+  // 4:"Dai 6 Kichi / 第6基地"
+  // 5:"Author:"
+  // 6:"Kichirock / キチロク"
+  // 7:"Parodies:"
+  // 8:"Love Live! series"
+  // 9:"Type:"
+  // 10:"Doujinshi"
+  // 11:"Pages: 4"
+  // 12:"Adult: Yes"
+  // 13:"Score:"
+  // 14:"- (0)"
+  // 15:"Date: 2015-12-31"
+  // 16:"Modified: 2018-01-10"
+
+  lines.forEach(e => {
+    const isKey = e.endsWith(":") && allowKeys.includes(e);
+    const isKeyValue = e.includes(": ");
+
+    if(isKey){
+      currentKey =  e.substring(0, e.length-1);
+    }else if(isKeyValue){
+      const tks = e.split(": ");
+      if(tks.length === 2){
+        obj[tks[0]] = tks[1];
+      }
+    } else if(currentKey){
+      obj[currentKey] = e;
+      currentKey = null;
+    }
+  });
+
+  return obj;
 }
 
 async function searchOne(author){

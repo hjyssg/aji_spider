@@ -4,19 +4,19 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth')
 puppeteer.use(StealthPlugin());
 // const AdblockerPlugin = require('puppeteer-extra-plugin-adblocker')
 // puppeteer.use(AdblockerPlugin({ blockTrackers: true, cacheDir: "blockcache" }));
+const fs = require('fs');
+
 
 const pfs = require('promise-fs');
 const path = require('path');
-const screenshotPath = "./screenshots";
 let browser;
 const visited = {};
 let secPage;
 let page;
 
 const bookInfoDb = require("./bookInfoDb");
-let db_path = "book_info";
+let db_path = "book_info.json";
 bookInfoDb.init(db_path);
-
 
 async function handleSingleAuthorPage(subUrl){
   if(visited[subUrl]){
@@ -24,18 +24,25 @@ async function handleSingleAuthorPage(subUrl){
   }
 
   await secPage.goto(subUrl);
-  let pageButton = await secPage.$$(".header .pagination a");
+  let pageLinks = await secPage.$$eval(".header .pagination a", nodeArr => {
+    return nodeArr.map(e => e.href);
+  });
+  console.log("check ", subUrl)
+  visited[subUrl] = true;
 
-  for(let ii = 0; ii < pageButton.length; ii++){
+  //网页始终有pagina的样子
+  //手动点击 pagination的ui会改变 很不好爬
+  for(let ii = 0; ii < pageLinks.length; ii++){
     if(ii > 0){
-      await pageButton[ii].click()
-      await secPage.waitForNavigation();
-      pageButton = await secPage.$$(".header .pagination a");
+      // await pageButton[ii].click()
+      // await secPage.waitForNavigation();
+      // pageButton = await secPage.$$(".header .pagination a");
+      
+      await secPage.goto(pageLinks[ii])
     }
 
-    visited[subUrl] = true;
-    console.log(subUrl)
-  
+    console.log(ii, "/", pageLinks.length);
+
     await secPage.waitForTimeout(1005);
   
     let bookinfo = await secPage.$$eval(".bookinfo", nodeArr => {
@@ -50,7 +57,6 @@ async function handleSingleAuthorPage(subUrl){
   
     // console.log(bookinfo);
     // const title = await secPage.title();
-
     bookInfoDb.insert(bookinfo);
   }
 }
@@ -112,8 +118,7 @@ function parseBookinfo(singleInfo){
   return obj;
 }
 
-async function searchOne(author){
-
+async function searchWithOneAuthor(author){
     //搜索作者
     const url = "https://www.doujinshi.org/search/simple/?T=author&sn=" + author;
     await page.goto(url);
@@ -131,9 +136,7 @@ async function searchOne(author){
     }
 }
 
-let author_list = [
-  "キチロク"
-];
+let author_list =  fs.readFileSync("keys.txt").toString().split('\n'); 
 
 async function main(){
   browser = await puppeteer.launch({ headless: false,
@@ -164,18 +167,22 @@ async function main(){
   await secPage.setRequestInterception(true);
   secPage.on('request', noImg);
 
-  for(let ii = 0; ii < author_list.length; ii++){
-    const author = author_list[ii];
-    await searchOne(author);
+  let ii = 14; // 0;
+  for(; ii < author_list.length; ii++){
+    try{
+      const author = author_list[ii];
+      console.log("begin:", author, ii)
+      await searchWithOneAuthor(author);
+      console.log("finish:", author)
+    }catch(e){
+      debugger
+      console.error(e)
+    }
   }
+  console.log("done");
 }
 
 
-try{
   main();
 
-  console.log("done");
-}catch(e){
-  debugger
-  console.error(e)
-}
+  

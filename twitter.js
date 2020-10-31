@@ -78,17 +78,61 @@ async function main(){
     
     let page2 = await browser.newPage();
     // blocker.enableBlockingInPage(page2)
-    await page2.goto("https://twitter.com/potus?lang=en");
+    // await page2.goto("https://twitter.com/potus?lang=en");
+    await page2.goto("https://twitter.com/Strangestone/media");
 
-    await waitForUseManuallyLogin(page2);
+    // await waitForUseManuallyLogin(page2);
 
-    let index = 0;
-    while(index < 100){
-      index++;
+  await downloadAllImg(page2);
+}
 
-      await page2.mouse.wheel({ deltaY: 300 })
-      await page2.waitFor(2010);
-    }
+const visitedLink = {};
+
+async function downloadAllImg(page){
+  let index = 0;
+  while(index < 100){
+    index++;
+
+    const obj = await page.evaluate(() => {
+
+
+      let result = {};
+      document.querySelectorAll("article").forEach(article => {
+        //e.g 水洗卜イレ@suisentoire·2時間鬼滅の刃最終回ネタバレ
+        let spans = Array.from(article.querySelectorAll("span span"));
+        let author;
+        for(let ii = 0; ii < spans.length; ii++){
+          let e1 = spans[ii];
+          let e2 = e1.parentElement.parentElement.parentElement.parentElement;
+          if(e2.textContent.includes("a")){
+            author = e2.textContent;
+            break;
+          }
+        }
+        if(!author){
+          return;
+        }
+        console.log(author);  
+        const imgs = article.querySelectorAll("img");
+        if(imgs.length > 0) {
+          result[author] = [];
+          imgs.forEach(img => {
+            const link = img.src;
+            result[author].push(link);
+          });
+        }
+      })
+
+      return result;
+    });
+
+    // visitedLink
+
+    console.log(obj);
+
+    await page.mouse.wheel({ deltaY: 500 })
+    await page.waitForTimeout(2010);
+  }
 }
 
 try{

@@ -81,13 +81,13 @@ async function main(){
 
     // await waitForUseManuallyLogin(page2);
 
-  await downloadAllImg(page2);
+  await downloadAllImg(page2, browser);
 }
 
 const downloadedLink = {};
 
 async function downloadAllImg(page, browser){
-  page2 = await browser.newPage();
+  const imgpage = await browser.newPage();
 
   let index = 0;
   while(index < 100){
@@ -111,7 +111,7 @@ async function downloadAllImg(page, browser){
         if(!author){
           return;
         }
-        console.log(author);  
+        // console.log(author);  
         const imgs = article.querySelectorAll("img");
         if(imgs.length > 0) {
           imgs.forEach(img => {
@@ -153,6 +153,12 @@ async function downloadAllImg(page, browser){
         try{
           //todo
           // https://stackoverflow.com/questions/52542149/how-can-i-download-images-on-a-page-using-puppeteer
+          var viewSource = await await imgpage.goto(_link);
+
+          const err = pfs.writeFile(segment, await viewSource.buffer())
+          if(err){
+            throw err;
+          }
           downloadedLink[link] = true;
         }catch(err){
           console.error(err)

@@ -9,8 +9,6 @@ puppeteer.use(StealthPlugin());
 // const PuppeteerBlocker = require('@cliqz/adblocker-puppeteer').PuppeteerBlocker;
 // const blocker = PuppeteerBlocker.parse(fs.readFileSync('F:\\aji_spider\\easylist.txt', 'utf-8'));
 
-
-
 const pfs = require('promise-fs');
 
 const path = require('path');
@@ -86,17 +84,18 @@ async function main(){
   await downloadAllImg(page2);
 }
 
-const visitedLink = {};
+const downloadedLink = {};
 
-async function downloadAllImg(page){
+async function downloadAllImg(page, browser){
+  page2 = await browser.newPage();
+
   let index = 0;
   while(index < 100){
     index++;
 
     const obj = await page.evaluate(() => {
 
-
-      let result = {};
+      let result = [];
       document.querySelectorAll("article").forEach(article => {
         //e.g 水洗卜イレ@suisentoire·2時間鬼滅の刃最終回ネタバレ
         let spans = Array.from(article.querySelectorAll("span span"));
@@ -115,10 +114,12 @@ async function downloadAllImg(page){
         console.log(author);  
         const imgs = article.querySelectorAll("img");
         if(imgs.length > 0) {
-          result[author] = [];
           imgs.forEach(img => {
             const link = img.src;
-            result[author].push(link);
+            result.push({
+              author,
+              link
+            });
           });
         }
       })
@@ -128,7 +129,35 @@ async function downloadAllImg(page){
 
     // visitedLink
 
-    console.log(obj);
+    // console.log(obj);
+
+    for(let ii = 0; ii < obj.length; ii++){
+        const info = obj[ii];
+        const { link, author} = info;
+
+        if(downloadedLink[link]){
+          continue;
+        }
+
+        let _link = link;
+        let dest = author + " -- " + link;
+        //todo
+        //https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams#Browser_compatibility
+        const segment = link.substring(link.lastIndexOf('/') + 1);
+
+        const options = {
+          url:  link,
+          dest: segment + ".jpg"                 // will be saved to /path/to/dest/image.jpg
+        }
+         
+        try{
+          //todo
+          // https://stackoverflow.com/questions/52542149/how-can-i-download-images-on-a-page-using-puppeteer
+          downloadedLink[link] = true;
+        }catch(err){
+          console.error(err)
+        }
+    }
 
     await page.mouse.wheel({ deltaY: 500 })
     await page.waitForTimeout(2010);

@@ -33,6 +33,20 @@ function sleep(ms) {
 
 const downloadedLink = {}
 
+function formatDate(date) {
+    var d = new Date(date),
+        month = '' + (d.getMonth() + 1),
+        day = '' + d.getDate(),
+        year = d.getFullYear();
+
+    if (month.length < 2) 
+        month = '0' + month;
+    if (day.length < 2) 
+        day = '0' + day;
+
+    return [year, month, day].join('-');
+}
+
 async function findImgAndDownload(){
     let queue = [];
     document.querySelectorAll("article").forEach(article => {
@@ -50,6 +64,11 @@ async function findImgAndDownload(){
         if(!author){
           return;
         }
+
+        let timeSpan = article.querySelector("article time");
+        let dt = new Date(timeSpan.getAttribute("datetime"));
+        let timestamp = formatDate(dt);
+
         // console.log(author);  
         const imgs = article.querySelectorAll("img");
         if(imgs.length > 1) {
@@ -62,7 +81,8 @@ async function findImgAndDownload(){
             const link = img.src;
             queue.push({
               author,
-              link
+              link,
+              timestamp
             });
           });
         }
@@ -72,7 +92,7 @@ async function findImgAndDownload(){
 
     for(let ii = 0; ii < queue.length; ii++){
         const info = queue[ii];
-        const { link, author } = info;
+        const { link, author, timestamp } = info;
 
         if(_stop_download_){
             break;
@@ -90,26 +110,29 @@ async function findImgAndDownload(){
             }
 
             format = url.searchParams.get("format")
-        }  else{
-                 // http://fridge-dweller.blogspot.com/2012/09/obtaining-tweeted-images-in-original.html
-                 url.href += ":orig";
-         }
+        }  
+        // else{
+        //          // http://fridge-dweller.blogspot.com/2012/09/obtaining-tweeted-images-in-original.html
+        //          url.href += ":orig";
+        // }
 
         let _link = url.href;
         const segment = url.pathname.substring(url.pathname.lastIndexOf('/') + 1);
-        let fn = author +" -- " + segment;
+        let fn = author +" -- " + timestamp + " " + segment;
 
         if(format){
             fn = fn + "." + format;
         }
+
+        fn = fn.trim();
          
         try{
-          console.log("begin download", _link)
+          // console.log("begin download", _link)
           downloadedLink[link] = true;
           await GM_downloadPromise(_link, fn);
-          console.log("downloaded", _link);
+          // console.log("downloaded", _link);
           console.log(Object.keys(downloadedLink).length, "imgs downloaded")
-          await sleep(2000);
+          await sleep(100);
         }catch(err){
           // console.error(err)
           debugger
@@ -146,7 +169,7 @@ async function beginDownloadAndScroll(){
     while(!_stop_download_){
         await findImgAndDownload();
         window.scrollTo(0, window.scrollY + 500);
-        await sleep(2000);
+        await sleep(500);
     }
 }
 

@@ -1,4 +1,8 @@
 
+// THIS FILE is ABANDONED 
+// It is way easier to download images by writing a temper monkey script than writing a crawler
+
+
 const puppeteer = require('puppeteer-extra')
 const StealthPlugin = require('puppeteer-extra-plugin-stealth')
 puppeteer.use(StealthPlugin());
@@ -103,7 +107,7 @@ async function downloadAllImg(page, browser){
         for(let ii = 0; ii < spans.length; ii++){
           let e1 = spans[ii];
           let e2 = e1.parentElement.parentElement.parentElement.parentElement;
-          if(e2.textContent.includes("a")){
+          if(e2.textContent.includes("@")){
             author = e2.textContent;
             break;
           }

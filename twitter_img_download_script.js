@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name                Twitter: Download Images
+// @name:zh-CN          Twitter：下载图片
 // @version             0.0.1
-// @description         One button click to download all imgs in twitter page
+// @description         One button click to download all imgs in twitter page. Firefox is recommended. If you use Chrome, annoying saveAs dialog will keep pop up.
+// @description:zh-CN   一键下载twitter页面所有图片。需要注意使用chrome会一直跳弹窗，建议使用firefox.
 // @author              aji
-// @namespace           
+// @namespace           https://github.com/hjyssg
 // @icon                https://i.imgur.com/M9oO8K9.png
 // @include             https://twitter.com/*
 // @include             https://mobile.twitter.com/*
@@ -95,7 +97,7 @@ async function findImgAndDownload(){
 
         let _link = url.href;
         const segment = url.pathname.substring(url.pathname.lastIndexOf('/') + 1);
-        let fn = author +" --- " + segment;
+        let fn = author +" -- " + segment;
 
         if(format){
             fn = fn + "." + format;
@@ -110,6 +112,7 @@ async function findImgAndDownload(){
           await sleep(2000);
         }catch(err){
           // console.error(err)
+          debugger
         }
     }
 }
@@ -119,6 +122,7 @@ function GM_downloadPromise(_link, fn){
     GM_download({
             url: _link, 
             name: fn,
+            saveAs: false,  // this do not work for Chrome
             onerror: err => {
                 console.error("error", _link);
                 reject(err);

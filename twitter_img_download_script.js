@@ -1,0 +1,157 @@
+// ==UserScript==
+// @name                Twitter: Download Images
+// @version             0.0.1
+// @description         One button click to download all imgs in twitter page
+// @author              aji
+// @namespace           
+// @icon                https://i.imgur.com/M9oO8K9.png
+// @include             https://twitter.com/*
+// @include             https://mobile.twitter.com/*
+// @grant               GM_download
+// ==/UserScript==
+
+/* jshint esversion: 6 */
+
+//https://stackoverflow.com/questions/6480082/add-a-javascript-button-using-greasemonkey-or-tampermonkey
+function addButton(text, onclick, cssObj, id) {
+    cssObj = Object.assign({position: 'fixed', top: '7%', right:'4%', 'z-index': 3}, cssObj||{} )
+    let button = document.createElement('button'), btnStyle = button.style;
+    document.body.appendChild(button)
+    button.innerHTML = text;
+    button.onclick = onclick
+    btnStyle.position = 'fixed';
+    button.id = id;
+    Object.keys(cssObj).forEach(key => btnStyle[key] = cssObj[key]);
+    return button;
+}
+
+function sleep(ms) {
+   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+const downloadedLink = {}
+
+async function findImgAndDownload(){
+    let queue = [];
+    document.querySelectorAll("article").forEach(article => {
+        //e.g 水洗卜イレ@suisentoire· asdsad
+        let spans = Array.from(article.querySelectorAll("span span"));
+        let author;
+        for(let ii = 0; ii < spans.length; ii++){
+          let e1 = spans[ii];
+          let e2 = e1.parentElement.parentElement.parentElement.parentElement;
+          if(e2.textContent.includes("@")){
+            author = e2.textContent;
+            break;
+          }
+        }
+        if(!author){
+          return;
+        }
+        // console.log(author);  
+        const imgs = article.querySelectorAll("img");
+        if(imgs.length > 1) {
+          imgs.forEach(img => {
+            if(img.clientWidth < 80 && img.clientHeight < 80){
+              //skip icon and emoji
+              return;
+            }
+
+            const link = img.src;
+            queue.push({
+              author,
+              link
+            });
+          });
+        }
+      })
+
+    // queue = queue.filter(e => !downloadedLink[e.link]);
+
+    for(let ii = 0; ii < queue.length; ii++){
+        const info = queue[ii];
+        const { link, author } = info;
+
+        if(_stop_download_){
+            break;
+        }
+
+        if(downloadedLink[link]){
+            continue;
+        }
+
+        const url = new URL(link);
+        let format;
+        if(url.search){
+            if(url.searchParams.get("name")){
+                url.searchParams.set("name", "orig")
+            }
+
+            format = url.searchParams.get("format")
+        }  else{
+                 // http://fridge-dweller.blogspot.com/2012/09/obtaining-tweeted-images-in-original.html
+                 url.href += ":orig";
+         }
+
+        let _link = url.href;
+        const segment = url.pathname.substring(url.pathname.lastIndexOf('/') + 1);
+        let fn = author +" --- " + segment;
+
+        if(format){
+            fn = fn + "." + format;
+        }
+         
+        try{
+          console.log("begin download", _link)
+          downloadedLink[link] = true;
+          await GM_downloadPromise(_link, fn);
+          console.log("downloaded", _link);
+          console.log(Object.keys(downloadedLink).length, "imgs downloaded")
+          await sleep(2000);
+        }catch(err){
+          // console.error(err)
+        }
+    }
+}
+
+function GM_downloadPromise(_link, fn){
+  return new Promise((resolve, reject) => {
+    GM_download({
+            url: _link, 
+            name: fn,
+            onerror: err => {
+                console.error("error", _link);
+                reject(err);
+            },
+            ontimeout: ()=>{
+                console.error("timeout", _link);
+                reject("timeout");
+            },
+            onload: ()=>{
+               resolve();
+            }
+    });
+  })
+}
+
+let _stop_download_;
+
+async function beginDownloadAndScroll(){
+    _stop_download_ = false;
+
+    while(!_stop_download_){
+        await findImgAndDownload();
+        window.scrollTo(0, window.scrollY + 500);
+        await sleep(2000);
+    }
+}
+
+
+(function() {
+    'use strict';
+    addButton("download all images", beginDownloadAndScroll, {top: '7%'}, "a-begin-button");
+
+    addButton("stop download", () => { 
+        _stop_download_ = true;
+    }, {top: '10%'}, "a-stop-button");
+})();

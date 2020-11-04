@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name                Twitter: Download Images
-// @name:zh-CN          Twitter：下载图片
+// @name                Twitter: Download All Images
+// @name:zh-CN          Twitter：下载全部图片
 // @version             0.0.1
-// @description         One button click to download all imgs in twitter page. Firefox is recommended. If you use Chrome, annoying saveAs dialog will keep pop up.
-// @description:zh-CN   一键下载twitter页面所有图片。需要注意使用chrome会一直跳弹窗，建议使用firefox.
+// @description         One button click to download all imgs in twitter page. Firefox is recommended for this script. Chrome will keep popping up the annoying saveAs dialog.
+// @description:zh-CN   一键下载twitter页面所有图片。需要注意使用chrome会一直疯狂跳弹窗，建议使用firefox.
 // @author              aji
 // @namespace           https://github.com/hjyssg
 // @icon                https://i.imgur.com/M9oO8K9.png
@@ -16,7 +16,11 @@
 
 //https://stackoverflow.com/questions/6480082/add-a-javascript-button-using-greasemonkey-or-tampermonkey
 function addButton(text, onclick, cssObj, id) {
-    cssObj = Object.assign({position: 'fixed', top: '7%', right:'4%', 'z-index': 3}, cssObj||{} )
+    const defaultCSS = {position: 'fixed', top: '7%', right:'40%', 'z-index': 3, 
+                        "background-color": "#57cff7", "color": "white",
+                        "padding": "10px", "border": "0px",
+                        "font-size": "1rem","font-weight": "bold" }
+    cssObj = Object.assign(defaultCSS, cssObj || {} )
     let button = document.createElement('button'), btnStyle = button.style;
     document.body.appendChild(button)
     button.innerHTML = text;
@@ -165,12 +169,27 @@ let _stop_download_;
 
 async function beginDownloadAndScroll(){
     _stop_download_ = false;
+    let scrollReachEndCount = 0;
 
-    while(!_stop_download_){
+    while(!_stop_download_ && scrollReachEndCount < 30){
         await findImgAndDownload();
-        window.scrollTo(0, window.scrollY + 500);
-        await sleep(500);
+        const oldY = window.scrollY;
+        const newY = window.scrollY + 500;
+        window.scrollTo(0, newY);
+        await sleep(200);
+           
+        if(window.scrollY < newY){
+            //not scroll as much as expected
+            //meaning reaching the end
+            scrollReachEndCount++;
+        }else{
+            //use count here
+            //be very careful here, I want to download all imgs
+            scrollReachEndCount = 0;
+        }
     }
+    
+    console.log("download stop");
 }
 
 

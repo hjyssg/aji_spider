@@ -57,6 +57,8 @@ async function findImgAndDownload(){
         //e.g 水洗卜イレ@suisentoire· asdsad
         let spans = Array.from(article.querySelectorAll("span span"));
         let author;
+        let timestamp;
+
         for(let ii = 0; ii < spans.length; ii++){
           let e1 = spans[ii];
           let e2 = e1.parentElement.parentElement.parentElement.parentElement;
@@ -70,9 +72,11 @@ async function findImgAndDownload(){
         }
 
         let timeSpan = article.querySelector("article time");
-        let dt = new Date(timeSpan.getAttribute("datetime"));
-        let timestamp = formatDate(dt);
-
+        if(timeSpan){
+            let dt = new Date(timeSpan.getAttribute("datetime"));
+            timestamp = formatDate(dt);
+        }
+   
         // console.log(author);  
         const imgs = article.querySelectorAll("img");
         if(imgs.length > 1) {
@@ -122,7 +126,7 @@ async function findImgAndDownload(){
 
         let _link = url.href;
         const segment = url.pathname.substring(url.pathname.lastIndexOf('/') + 1);
-        let fn = author +" -- " + timestamp + " " + segment;
+        let fn = author +" -- " + timestamp||"" + " " + segment;
 
         if(format){
             fn = fn + "." + format;
@@ -173,7 +177,6 @@ async function beginDownloadAndScroll(){
 
     while(!_stop_download_ && scrollReachEndCount < 30){
         await findImgAndDownload();
-        const oldY = window.scrollY;
         const newY = window.scrollY + 500;
         window.scrollTo(0, newY);
         await sleep(200);

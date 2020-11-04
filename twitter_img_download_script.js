@@ -16,7 +16,7 @@
 
 //https://stackoverflow.com/questions/6480082/add-a-javascript-button-using-greasemonkey-or-tampermonkey
 function addButton(text, onclick, cssObj, id) {
-    const defaultCSS = {position: 'fixed', top: '7%', right:'40%', 'z-index': 3, 
+    const defaultCSS = {position: 'fixed', top: '7%', left:'50%', 'z-index': 3, 
                         "background-color": "#57cff7", "color": "white",
                         "padding": "10px", "border": "0px",
                         "font-size": "1rem","font-weight": "bold" }
@@ -199,5 +199,5 @@ async function beginDownloadAndScroll(){
 
     addButton("stop download", () => { 
         _stop_download_ = true;
-    }, {top: '10%'}, "a-stop-button");
+    }, {top: '12%'}, "a-stop-button");
 })();
